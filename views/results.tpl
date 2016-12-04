@@ -1,11 +1,11 @@
 %include header title=": " + query['query']+" ("+str(nres)+")"
-%include search query=query, dirs=dirs, sorts=sorts
+%include search query=query, dirs=dirs, sorts=sorts, config=config
 <div id="status">
     <div id="found">
         Found <b>{{nres}}</b> matching: <b><i>{{qs}}</i></b>
         <small class="gray">({{time.seconds}}.{{time.microseconds/10000}}s)</small>
     </div>
-    %if len(res) > 0:
+    %if len(res) > 0 and not config['rclc_nojsoncsv']:
         <div id="downloads">
             <a href="./json?{{query_string}}">JSON</a>
             <a href="./csv?{{query_string}}">CSV</a>

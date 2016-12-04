@@ -124,6 +124,16 @@ def get_config():
     for d in config['dirs']:
         name = 'mount_%s' % urllib.quote(d,'')
         config['mounts'][d] = select([bottle.request.get_cookie(name), 'file://%s' % d], [None, ''])
+
+    # Parameters set by the admin in the recoll configuration
+    # file. These override anything else, so read them last
+    config['rclc_nojsoncsv'] = bool(int(rclconf.getConfParam('webui_nojsoncsv')))
+    val = rclconf.getConfParam('webui_maxperpage')
+    val = 0 if val is None else int(val)
+    if val:
+        if config['perpage'] == 0 or config['perpage'] > val:
+            config['perpage'] = val
+    config['rclc_nosettings'] = int(rclconf.getConfParam('webui_nosettings'))
     return config
 #}}}
 #{{{ get_dirs
@@ -240,7 +250,7 @@ def server_static(path):
 def main():
     config = get_config()
     return { 'dirs': get_dirs(config['dirs'], config['dirdepth']),
-            'query': get_query(), 'sorts': SORTS }
+            'query': get_query(), 'sorts': SORTS, 'config': config}
 #}}}
 #{{{ results
 @bottle.route('/results')
@@ -258,7 +268,7 @@ def results():
             get_dirs(config['dirs'], config['dirdepth']),
              'qs': qs, 'sorts': SORTS, 'config': config,
             'query_string': bottle.request.query_string, 'nres': nres,
-             'hasrclextract': hasrclextract }
+             'hasrclextract': hasrclextract, 'config': config}
 #}}}
 #{{{ preview
 @bottle.route('/preview/<resnum:int>')

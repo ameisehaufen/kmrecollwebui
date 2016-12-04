@@ -9,7 +9,9 @@
         <input tabindex="0" type="search" name="query" value="{{query['query']}}" autofocus><br><br>
         <input type="submit" value="Search">&nbsp;
         <a href="./" tabindex="-1"><input type="button" value="Reset"></a>&nbsp;
-        <a href="settings" tabindex="-1"><input type="button" value="Settings"></a>
+        %if not config['rclc_nosettings']:
+            <a href="settings" tabindex="-1"><input type="button" value="Settings"></a>
+        %end
     </td>
     <td width="30%">
         <b>Folder</b><br>
