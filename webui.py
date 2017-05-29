@@ -127,13 +127,20 @@ def get_config():
 
     # Parameters set by the admin in the recoll configuration
     # file. These override anything else, so read them last
-    config['rclc_nojsoncsv'] = bool(int(rclconf.getConfParam('webui_nojsoncsv')))
+    val = rclconf.getConfParam('webui_nojsoncsv')
+    val = 0 if val is None else int(val)
+    config['rclc_nojsoncsv'] = val
+
     val = rclconf.getConfParam('webui_maxperpage')
     val = 0 if val is None else int(val)
     if val:
         if config['perpage'] == 0 or config['perpage'] > val:
             config['perpage'] = val
-    config['rclc_nosettings'] = int(rclconf.getConfParam('webui_nosettings'))
+
+    val = rclconf.getConfParam('webui_nosettings')
+    val = 0 if val is None else int(val)
+    config['rclc_nosettings'] = val
+
     return config
 #}}}
 #{{{ get_dirs
