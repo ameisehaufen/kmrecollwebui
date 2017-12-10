@@ -316,8 +316,12 @@ def edit(resnum):
     path = xt.idoctofile(doc.ipath, doc.mimetype)
     pathismine = True
 
+    if (not doc.ipath) and "filename" in doc.keys():
+        filename = doc.filename
+    else:
+        filename = os.path.basename(path)
     bottle.response.headers['Content-Disposition'] = \
-        'attachment; filename="%s"' % os.path.basename(path).encode('utf-8')
+        'attachment; filename="%s"' % filename.encode('utf-8')
     path = path.encode('utf-8')
     bottle.response.headers['Content-Length'] = os.stat(path).st_size
     f = open(path, 'r')
