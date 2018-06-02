@@ -367,14 +367,20 @@ def get_csv():
     bottle.response.headers['Content-Type'] = 'text/csv'
     bottle.response.headers['Content-Disposition'] = 'attachment; filename=recoll-%s.csv' % normalise_filename(qs)
     res, nres, timer = recoll_search(query, False)
-    si = io.StringIO()
+    if py3k:
+        si = io.StringIO()
+    else:
+        si = io.BytesIO()
     cw = csv.writer(si)
     fields = config['csvfields'].split()
     cw.writerow(fields)
     for doc in res:
         row = []
         for f in fields:
-            row.append(doc[f])
+            if f in doc:
+                row.append(doc[f].decode('utf-8'))
+            else:
+                row.append('')
         cw.writerow(row)
     return si.getvalue().strip("\r\n")
 #}}}
