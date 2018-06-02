@@ -3,7 +3,7 @@
 %if py3k:
 	%from urllib.parse import urlencode
 %else:
-	%from urllib.parse import urlencode
+	%from urllib import urlencode
 %end
 %import math
 
