@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+from __future__ import print_function
 #{{{ imports
 import os
 import bottle
@@ -9,20 +9,28 @@ import glob
 import hashlib
 import json
 import csv
-import StringIO
-import ConfigParser
+import io
 import string
 import shlex
+def msg(s):
+    print("%s" % s, file=sys.stderr)
+py3k = sys.version_info >= (3, 0, 0)
+if py3k:
+    from urllib.parse import urlencode, quote as urlquote
+else: # 2.x
+    from urllib import urlencode, quote as urlquote
+
 import urllib
 # import recoll and rclextract
 try:
     from recoll import recoll
     from recoll import rclextract
     hasrclextract = True
-except:
+except Exception as err:
+    msg("Import recoll because: %s" % err)
     import recoll
     hasrclextract = False
-# import rclconfig system-wide or local copy
+# Import rclconfig system-wide or local copy
 try:
     from recoll import rclconfig
 except:
@@ -122,7 +130,7 @@ def get_config():
     # get mountpoints
     config['mounts'] = {}
     for d in config['dirs']:
-        name = 'mount_%s' % urllib.quote(d,'')
+        name = 'mount_%s' % urlquote(d,'')
         config['mounts'][d] = select([bottle.request.get_cookie(name), 'file://%s' % d], [None, ''])
 
     # Parameters set by the admin in the recoll configuration
@@ -171,11 +179,17 @@ def get_query():
 #}}}
 #{{{ query_to_recoll_string
 def query_to_recoll_string(q):
-    qs = q['query'].decode('utf-8')
+    if type(q['query']) == type(u''):
+        qs = q['query']
+    else:
+        qs = q['query'].decode('utf-8')
     if len(q['after']) > 0 or len(q['before']) > 0:
         qs += " date:%s/%s" % (q['after'], q['before'])
-    if q['dir'] != '<all>':
-        qs += " dir:\"%s\" " % q['dir'].decode('utf-8')
+    qdir = q['dir']
+    if type(qdir) != type(u''):
+        qdir = qdir.decode('utf-8')
+    if qdir != '<all>':
+        qs += " dir:\"%s\" " % qdir
     return qs
 #}}}
 #{{{ recoll_initsearch
@@ -234,12 +248,14 @@ def recoll_search(q, dosnippets=True):
             if v is not None:
                 d[f] = v.encode('utf-8')
             else:
-                d[f] = ''
+                d[f] = b''
         d['label'] = select([d['title'], d['filename'], '?'], [None, ''])
-        d['sha'] = hashlib.sha1(d['url']+d['ipath']).hexdigest()
-        d['time'] = timestr(d['mtime'], config['timefmt'])
+        d['sha'] = hashlib.sha1(d['url']+d['ipath']).hexdigest().encode('utf-8')
+        d['time'] = timestr(d['mtime'], config['timefmt']).encode('utf-8')
         if dosnippets:
             d['snippet'] = query.makedocabstract(doc, highlighter).encode('utf-8')
+        #for n,v in d.items():
+        #    print("type(%s) is %s" % (n,type(v)))
         results.append(d)
     tend = datetime.datetime.now()
     return results, nres, tend - tstart
@@ -351,7 +367,7 @@ def get_csv():
     bottle.response.headers['Content-Type'] = 'text/csv'
     bottle.response.headers['Content-Disposition'] = 'attachment; filename=recoll-%s.csv' % normalise_filename(qs)
     res, nres, timer = recoll_search(query, False)
-    si = StringIO.StringIO()
+    si = io.StringIO()
     cw = csv.writer(si)
     fields = config['csvfields'].split()
     cw.writerow(fields)
@@ -374,7 +390,7 @@ def set():
     for k, v in DEFAULTS.items():
         bottle.response.set_cookie(k, str(bottle.request.query.get(k)), max_age=3153600000, expires=315360000)
     for d in config['dirs']:
-        cookie_name = 'mount_%s' % urllib.quote(d, '')
+        cookie_name = 'mount_%s' % urlquote(d, '')
         bottle.response.set_cookie(cookie_name, str(bottle.request.query.get('mount_%s' % d)), max_age=3153600000, expires=315360000)
     bottle.redirect('./')
 #}}}
