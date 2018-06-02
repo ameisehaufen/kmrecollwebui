@@ -355,6 +355,14 @@ def get_json():
     bottle.response.headers['Content-Disposition'] = 'attachment; filename=recoll-%s.json' % normalise_filename(qs)
     res, nres, timer = recoll_search(query)
 
+    if py3k:
+        ures = []
+        for d in res:
+            ud={}
+            for f,v in d.items():
+                ud[f] = v.decode('utf-8')
+            ures.append(ud)
+        res = ures
     return json.dumps({ 'query': query, 'results': res })
 #}}}
 #{{{ csv
