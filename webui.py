@@ -337,10 +337,9 @@ def edit(resnum):
     else:
         filename = os.path.basename(path)
     bottle.response.headers['Content-Disposition'] = \
-        'attachment; filename="%s"' % filename.encode('utf-8')
-    path = path.encode('utf-8')
+        'attachment; filename="%s"' % filename
     bottle.response.headers['Content-Length'] = os.stat(path).st_size
-    f = open(path, 'r')
+    f = open(path, 'rb')
     if pathismine:
         os.unlink(path)
     return f
