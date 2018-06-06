@@ -240,6 +240,11 @@ def recoll_search(q, dosnippets=True):
     for i in range(config['perpage']):
         try:
             doc = query.fetchone()
+            # Later Recoll versions return None at EOL instead of
+            # exception This change restores conformance to PEP 249
+            # Python Database API Specification
+            if not doc:
+                break
         except:
             break
         d = {}
