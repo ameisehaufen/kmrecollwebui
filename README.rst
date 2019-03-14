@@ -55,6 +55,10 @@ There's some optional command-line arguments available::
 Run as WSGI/CGI
 ---------------
 
+See the following link for a complete run-through:
+
+https://www.lesbonscomptes.com/recoll/pages/recoll-webui-install-wsgi.html
+
 Example WSGI/Apache2 config::
 
         WSGIDaemonProcess recoll user=recoll group=recoll threads=5 display-name=%{GROUP} python-path=/var/recoll-webui-master
