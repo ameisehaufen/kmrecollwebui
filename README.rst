@@ -19,7 +19,9 @@ Requirements
 
 All you need to use the WebUI is:
 
-* Python 2.x
+* Python 3
+* cherrypy. You can remove this dependance and run with the internal bottle
+  server by editing webui-standalone.py
 * Recoll 1.17+
 * web browser
 
