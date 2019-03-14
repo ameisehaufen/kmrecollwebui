@@ -15,6 +15,6 @@ if os.path.dirname(__file__) != "":
 
 # set up webui and run in own http server
 webui.bottle.debug(True)
-webui.bottle.run(host=args.addr, port=args.port, reloader=False)
+webui.bottle.run(server='cherrypy', host=args.addr, port=args.port, reloader=False)
 
 # vim: foldmethod=marker:filetype=python:textwidth=80:ts=4:et
