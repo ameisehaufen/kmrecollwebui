@@ -2,9 +2,9 @@
 Recoll WebUI
 ============
 
-/This (https://opensourceprojects.eu/p/recollwebui/) is an updated clone of
+_This (https://opensourceprojects.eu/p/recollwebui/) is an updated clone of
 Koniu's original version on GitHub (https://github.com/koniu/recoll-webui),
-which has not been updated lately, and is now slightly obsolete./
+which has not been updated lately, and is now slightly obsolete._
 
 **Recoll WebUI** is a Python-based web interface for **Recoll** text search
 tool for Unix/Linux.
