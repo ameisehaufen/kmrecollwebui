@@ -33,9 +33,7 @@
     <div class="search-result-links">
         <a href="{{url}}">Open</a>
         <a href="download/{{number-1}}?{{query_string}}">Download</a>
-    %if hasrclextract:
         <a href="preview/{{number-1}}?{{query_string}}" target="_blank">Preview</a>
-    %end
     </div>
     <div class="search-result-date">{{d['time']}}</div>
     <div class="search-result-snippet">{{!d['snippet']}}</div>

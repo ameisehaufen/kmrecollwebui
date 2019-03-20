@@ -22,15 +22,7 @@ else: # 2.x
 
 import urllib
 # import recoll and rclextract
-try:
-    from recoll import recoll
-    from recoll import rclextract
-    hasrclextract = True
-except Exception as err:
-    msg("Import recoll because: %s" % err)
-    import recoll
-    hasrclextract = False
-# Import rclconfig system-wide or local copy
+from recoll import recoll,rclextract
 try:
     from recoll import rclconfig
 except:
@@ -293,16 +285,14 @@ def results():
     if config['perpage'] == 0:
         config['perpage'] = nres
     return { 'res': res, 'time': timer, 'query': query, 'dirs':
-            get_dirs(config['dirs'], config['dirdepth']),
+             get_dirs(config['dirs'], config['dirdepth']),
              'qs': qs, 'sorts': SORTS, 'config': config,
-            'query_string': bottle.request.query_string, 'nres': nres,
-             'hasrclextract': hasrclextract, 'config': config}
+             'query_string': bottle.request.query_string, 'nres': nres,
+             'config': config}
 #}}}
 #{{{ preview
 @bottle.route('/preview/<resnum:int>')
 def preview(resnum):
-    if not hasrclextract:
-        return 'Sorry, needs recoll version 1.19 or later'
     query = get_query()
     qs = query_to_recoll_string(query)
     rclq = recoll_initsearch(query)
@@ -321,8 +311,6 @@ def preview(resnum):
 #{{{ download
 @bottle.route('/download/<resnum:int>')
 def edit(resnum):
-    if not hasrclextract:
-        return 'Sorry, needs recoll version 1.19 or later'
     query = get_query()
     qs = query_to_recoll_string(query)
     rclq = recoll_initsearch(query)
