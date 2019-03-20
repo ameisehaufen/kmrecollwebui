@@ -104,9 +104,15 @@ def normalise_filename(fn):
 #{{{ get_config
 def get_config():
     config = {}
+    envdir = bottle.request.environ.get('RECOLL_CONFDIR')
     # get useful things from recoll.conf
-    rclconf = rclconfig.RclConfig()
+    rclconf = rclconfig.RclConfig(envdir)
     config['confdir'] = rclconf.getConfDir()
+    extradbs = bottle.request.environ.get('RECOLL_EXTRADBS')
+    if extradbs:
+        config['extradbs'] = shlex.split(extradbs)
+    else:
+        config['extradbs'] = None
     config['dirs'] = [os.path.expanduser(d) for d in
                       shlex.split(rclconf.getConfParam('topdirs'))]
     config['stemlang'] = rclconf.getConfParam('indexstemminglanguages')
@@ -187,7 +193,7 @@ def query_to_recoll_string(q):
 #{{{ recoll_initsearch
 def recoll_initsearch(q):
     config = get_config()
-    db = recoll.connect(config['confdir'])
+    db = recoll.connect(config['confdir'], extra_dbs = config['extradbs'])
     db.setAbstractParams(config['maxchars'], config['context'])
     query = db.query()
     query.sortby(q['sort'], q['ascending'])
