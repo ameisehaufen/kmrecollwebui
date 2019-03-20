@@ -193,7 +193,10 @@ def query_to_recoll_string(q):
 #{{{ recoll_initsearch
 def recoll_initsearch(q):
     config = get_config()
-    db = recoll.connect(config['confdir'], extra_dbs = config['extradbs'])
+    if config['extradbs']:
+        db = recoll.connect(config['confdir'], extra_dbs = config['extradbs'])
+    else:
+        db = recoll.connect(config['confdir'])
     db.setAbstractParams(config['maxchars'], config['context'])
     query = db.query()
     query.sortby(q['sort'], q['ascending'])
