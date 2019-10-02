@@ -1,0 +1,35 @@
+# SystemD script for running the standalong server as a daemon
+# Place this in /etc/systemd/system/recoll-webui.servivce
+# owned by root, mode 0644
+
+# This assumes the Recoll Web-UI is installed under
+# the path /home/recoll/recoll-webui, and runs against port 8080.
+# Change these below as needed.
+#
+[Unit]
+Description=Recoll Search WebUI
+
+After=network.target
+
+RequiresMountsFor=/home/recoll
+
+[Service]
+# Standalone server runs as the main job, default
+Type=simple
+
+# Run under user recoll
+User=recoll
+
+# Set listen port and address as needed.
+# %H is the current host name
+ExecStart=/home/recoll/recoll-webui/webui-standalone.py \
+	  -a %H \
+	  -p 8080
+
+ExecStop=/bin/kill -SIGINT $MAINPID
+KillMode=process
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

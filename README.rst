@@ -52,6 +52,9 @@ There's some optional command-line arguments available::
     -a ADDR, --addr ADDR  address to bind to [127.0.0.1]
     -p PORT, --port PORT  port to listen on [8080]
 
+The standalone application can be configured to run automatically using
+systemd. See the file README.systemd.
+
 Run as WSGI/CGI
 ---------------
 
