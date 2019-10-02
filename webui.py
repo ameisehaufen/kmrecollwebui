@@ -7,13 +7,21 @@ import sys
 import datetime
 import glob
 import hashlib
-import json
 import csv
 import io
 import string
 import shlex
+
 def msg(s):
     print("%s" % s, file=sys.stderr)
+
+# use ujson if avalible (faster than built in json)
+try:
+    import ujson as json
+except ImportError:
+    import json
+    msg("ujson module not found, using (slower) built-in json module instead")
+
 py3k = sys.version_info >= (3, 0, 0)
 if py3k:
     from urllib.parse import urlencode, quote as urlquote
@@ -34,7 +42,7 @@ DEFAULTS = {
     'context': 30,
     'stem': 1,
     'timefmt': '%c',
-    'dirdepth': 3,
+    'dirdepth': 2,
     'maxchars': 500,
     'maxresults': 0,
     'perpage': 25,
@@ -172,6 +180,8 @@ def get_query():
         'sort': select([bottle.request.query.get('sort'), SORTS[0][0]]),
         'ascending': int(select([bottle.request.query.get('ascending'), 0])),
         'page': int(select([bottle.request.query.get('page'), 0])),
+        'highlight': int(select([bottle.request.query.get('highlight'), 1])),
+        'snippets': int(select([bottle.request.query.get('snippets'), 1])),
     }
     return query
 #}}}
@@ -215,7 +225,7 @@ class HlMeths:
         return '</span>'
 #}}}
 #{{{ recoll_search
-def recoll_search(q, dosnippets=True):
+def recoll_search(q):
     config = get_config()
     tstart = datetime.datetime.now()
     results = []
@@ -258,8 +268,12 @@ def recoll_search(q, dosnippets=True):
         d['label'] = select([d['title'], d['filename'], '?'], [None, ''])
         d['sha'] = hashlib.sha1(d['url']+d['ipath']).hexdigest().encode('utf-8')
         d['time'] = timestr(d['mtime'], config['timefmt']).encode('utf-8')
-        if dosnippets:
-            d['snippet'] = query.makedocabstract(doc, highlighter).encode('utf-8')
+        if 'snippets' in q and q['snippets']:
+            if 'highlight' in q and q['highlight']:
+                d['snippet'] = query.makedocabstract(
+                    doc, highlighter).encode('utf-8')
+            else:
+                d['snippet'] = query.makedocabstract(doc).encode('utf-8')
         #for n,v in d.items():
         #    print("type(%s) is %s" % (n,type(v)))
         results.append(d)
@@ -350,7 +364,6 @@ def edit(resnum):
 @bottle.route('/json')
 def get_json():
     query = get_query()
-    query['page'] = 0
     qs = query_to_recoll_string(query)
     bottle.response.headers['Content-Type'] = 'application/json'
     bottle.response.headers['Content-Disposition'] = 'attachment; filename=recoll-%s.json' % normalise_filename(qs)
@@ -372,10 +385,11 @@ def get_csv():
     config = get_config()
     query = get_query()
     query['page'] = 0
+    query['snippets'] = 0
     qs = query_to_recoll_string(query)
     bottle.response.headers['Content-Type'] = 'text/csv'
     bottle.response.headers['Content-Disposition'] = 'attachment; filename=recoll-%s.csv' % normalise_filename(qs)
-    res, nres, timer = recoll_search(query, False)
+    res, nres, timer = recoll_search(query)
     if py3k:
         si = io.StringIO()
     else:
