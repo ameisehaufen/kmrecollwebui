@@ -25,14 +25,6 @@ All you need to use the WebUI is:
 * Recoll 1.20+
 * web browser
 
-Download
-========
-If your Recoll version is 1.18.2 or newer:
-        https://github.com/koniu/recoll-webui/archive/master.zip
-If your Recoll version version is 1.17-1.18.1:
-        https://github.com/koniu/recoll-webui/archive/v1.18.1.zip
-You can fetch the full git repository like this:
-        ``git clone https://github.com/koniu/recoll-webui.git``
 
 Usage
 =====
