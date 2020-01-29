@@ -2,9 +2,9 @@
 <div class="search-result">
     %number = (query['page'] - 1)*config['perpage'] + i + 1
     <div class="search-result-number"><a href="#r{{d['sha']}}">#{{number}}</a></div>
-    %url = d['url'].replace(b'file://', b'')
+    %url = d['url'].replace('file://', '')
     %for dr, prefix in config['mounts'].items():
-        %url = url.replace(dr.encode('utf-8'), prefix.encode('utf-8'))
+        %url = url.replace(dr, prefix)
     %end
     <div class="search-result-title" id="r{{d['sha']}}" title="{{d['abstract']}}">
     %if 'title_link' in config and config['title_link'] != 'download':
@@ -24,9 +24,9 @@
         <div class="search-result-author">{{d['author']}}</div>
     %end
     <div class="search-result-url">
-        %urllabel = os.path.dirname(d['url'].replace(b'file://', b''))
+        %urllabel = os.path.dirname(d['url'].replace('file://', ''))
         %for r in config['dirs']:
-            %urllabel = urllabel.replace(r.encode('utf-8').rsplit(b'/',1)[0] + b'/' , b'')
+            %urllabel = urllabel.replace(r.rsplit('/',1)[0] + '/' , '')
         %end
         <a href="{{os.path.dirname(url)}}">{{urllabel}}</a>
     </div>

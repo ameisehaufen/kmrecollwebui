@@ -262,18 +262,18 @@ def recoll_search(q):
         for f in FIELDS:
             v = getattr(doc, f)
             if v is not None:
-                d[f] = v.encode('utf-8')
+                d[f] = v
             else:
-                d[f] = b''
+                d[f] = ''
         d['label'] = select([d['title'], d['filename'], '?'], [None, ''])
-        d['sha'] = hashlib.sha1(d['url']+d['ipath']).hexdigest().encode('utf-8')
-        d['time'] = timestr(d['mtime'], config['timefmt']).encode('utf-8')
+        d['sha'] = hashlib.sha1((d['url']+d['ipath']).encode('utf-8')).hexdigest()
+        d['time'] = timestr(d['mtime'], config['timefmt'])
         if 'snippets' in q and q['snippets']:
             if 'highlight' in q and q['highlight']:
                 d['snippet'] = query.makedocabstract(
-                    doc, highlighter).encode('utf-8')
+                    doc, highlighter)
             else:
-                d['snippet'] = query.makedocabstract(doc).encode('utf-8')
+                d['snippet'] = query.makedocabstract(doc)
         #for n,v in d.items():
         #    print("type(%s) is %s" % (n,type(v)))
         results.append(d)
@@ -374,7 +374,7 @@ def get_json():
         for d in res:
             ud={}
             for f,v in d.items():
-                ud[f] = v.decode('utf-8')
+                ud[f] = v
             ures.append(ud)
         res = ures
     return json.dumps({ 'query': query, 'results': res })
@@ -401,7 +401,7 @@ def get_csv():
         row = []
         for f in fields:
             if f in doc:
-                row.append(doc[f].decode('utf-8'))
+                row.append(doc[f])
             else:
                 row.append('')
         cw.writerow(row)
