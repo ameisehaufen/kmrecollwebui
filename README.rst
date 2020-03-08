@@ -2,7 +2,7 @@
 Recoll WebUI
 ============
 
-This (https://opensourceprojects.eu/p/recollwebui/) is an updated clone of
+This (https://framagit.org/medoc92/recollwebui) is an updated clone of
 Koniu's original version on GitHub (https://github.com/koniu/recoll-webui),
 which has not been updated lately, and is now slightly obsolete.
 
