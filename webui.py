@@ -1,4 +1,3 @@
-from __future__ import print_function
 #{{{ imports
 import os
 import bottle
@@ -173,29 +172,25 @@ def get_dirs(tops, depth):
 #{{{ get_query
 def get_query():
     query = {
-        'query': select([bottle.request.query.get('query'), '']),
-        'before': select([bottle.request.query.get('before'), '']),
-        'after': select([bottle.request.query.get('after'), '']),
-        'dir': select([bottle.request.query.get('dir'), '', '<all>'], [None, '']),
-        'sort': select([bottle.request.query.get('sort'), SORTS[0][0]]),
-        'ascending': int(select([bottle.request.query.get('ascending'), 0])),
-        'page': int(select([bottle.request.query.get('page'), 0])),
-        'highlight': int(select([bottle.request.query.get('highlight'), 1])),
-        'snippets': int(select([bottle.request.query.get('snippets'), 1])),
+        'query': select([bottle.request.query.query, '']),
+        'before': select([bottle.request.query.before, '']),
+        'after': select([bottle.request.query.after, '']),
+        'dir': select([bottle.request.query.dir, '', '<all>'], [None, '']),
+        'sort': select([bottle.request.query.sort, SORTS[0][0]]),
+        'ascending': int(select([bottle.request.query.ascending, 0], [None, ''])),
+        'page': int(select([bottle.request.query.page, 0], [None, ''])),
+        'highlight': int(select([bottle.request.query.highlight, 1], [None, ''])),
+        'snippets': int(select([bottle.request.query.snippets, 1], [None, ''])),
     }
+    msg("query['query'] : %s" % query['query'])
     return query
 #}}}
 #{{{ query_to_recoll_string
 def query_to_recoll_string(q):
-    if type(q['query']) == type(u''):
-        qs = q['query']
-    else:
-        qs = q['query'].decode('utf-8')
+    qs = q['query']
     if len(q['after']) > 0 or len(q['before']) > 0:
         qs += " date:%s/%s" % (q['after'], q['before'])
     qdir = q['dir']
-    if type(qdir) != type(u''):
-        qdir = qdir.decode('utf-8')
     if qdir != '<all>':
         qs += " dir:\"%s\" " % qdir
     return qs
