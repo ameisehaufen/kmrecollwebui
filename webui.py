@@ -107,6 +107,27 @@ def normalise_filename(fn):
         else:
             out += "_"
     return out
+
+def get_topdirs(confdir):
+    rclconf = rclconfig.RclConfig(confdir)
+    return rclconf.getConfParam('topdirs')
+
+# get database directory from recoll.conf, defaults to
+# confdir/xapiandb
+def get_dbdir(confdir):
+    rclconf = rclconfig.RclConfig(confdir)
+    dbdir = rclconf.getConfParam('dbdir')
+    cachedir = rclconf.getConfParam('cachedir')
+    basename = 'xapiandb'
+    dirname = confdir
+    if cachedir:
+        dirname = cachedir
+    if dbdir:
+        basename = dbdir
+        if os.path.isabs(dbdir):
+            dirname = ''
+    # recoll API expects bytes, not strings
+    return bytes(os.path.normpath(os.path.join(dirname, basename)),'utf-8')
 #}}}
 #{{{ get_config
 def get_config():
@@ -116,12 +137,21 @@ def get_config():
     rclconf = rclconfig.RclConfig(envdir)
     config['confdir'] = rclconf.getConfDir()
     extradbs = bottle.request.environ.get('RECOLL_EXTRADBS')
+    extraconfdirs = os.environ['RECOLL_EXTRACONFDIRS']
     if extradbs:
         config['extradbs'] = shlex.split(extradbs)
     else:
         config['extradbs'] = None
-    config['dirs'] = [os.path.expanduser(d) for d in
-                      shlex.split(rclconf.getConfParam('topdirs'))]
+    config['dirs'] = dict.fromkeys([os.path.expanduser(d) for d in
+                      shlex.split(rclconf.getConfParam('topdirs'))], config['confdir'])
+    # add topdirs from extra config dirs
+    if extraconfdirs:
+        config['extraconfdirs'] = shlex.split(extraconfdirs)
+        for e in config['extraconfdirs']:
+            config['dirs'].update(dict.fromkeys([os.path.expanduser(d) for d in
+                shlex.split(get_topdirs(e))],e))
+    else:
+        config['extraconfdirs'] = None
     config['stemlang'] = rclconf.getConfParam('indexstemminglanguages')
     # get config from cookies or defaults
     for k, v in DEFAULTS.items():
@@ -198,10 +228,38 @@ def query_to_recoll_string(q):
 #{{{ recoll_initsearch
 def recoll_initsearch(q):
     config = get_config()
-    if config['extradbs']:
-        db = recoll.connect(config['confdir'], extra_dbs = config['extradbs'])
+    confdir = config['confdir']
+    dbs = []
+    """ The reason for this somewhat elaborate scheme is to keep the
+    set size as small as possible by searching only those databases
+    with matching topdirs """
+    if q['dir'] == '<all>':
+        if config['extraconfdirs']:
+            dbs.extend(map(get_dbdir,config['extraconfdirs']))
     else:
-        db = recoll.connect(config['confdir'])
+        confdirs = []
+        for d,conf in config['dirs'].items():
+            if os.path.commonprefix([os.path.basename(d),q['dir']]) == q['dir']:
+                confdirs.append(conf)
+        if len(confdirs) == 0:
+            # should not happen, using non-existing q['dir']?
+            abort(400, 'no matching database for topdir ' + q['dir'])
+        elif len(confdirs) == 1:
+            # only one config (most common situation)
+            confdir = confdirs[0]
+        else:
+            # more than one config with matching topdir, use 'm all
+            confdir = confdirs[0]
+            dbs.extend(map(get_dbdir,confdirs[1:]))
+
+    if config['extradbs']:
+        dbs.extend(config['extradbs'])
+
+    if dbs:
+        db = recoll.connect(confdir,dbs)
+    else:
+        db = recoll.connect(confdir)
+
     db.setAbstractParams(config['maxchars'], config['context'])
     query = db.query()
     query.sortby(q['sort'], q['ascending'])
