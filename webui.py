@@ -34,6 +34,9 @@ try:
     from recoll import rclconfig
 except:
     import rclconfig
+
+g_fscharset=sys.getfilesystemencoding()
+
 #}}}
 #{{{ settings
 # settings defaults
@@ -134,7 +137,7 @@ def get_dbdir(confdir):
         if os.path.isabs(dbdir):
             dirname = ''
     # recoll API expects bytes, not strings
-    return bytes(os.path.normpath(os.path.join(dirname, basename)),'utf-8')
+    return os.path.normpath(os.path.join(dirname, basename)).encode(g_fscharset)
 #}}}
 #{{{ get_config
 def get_config():
@@ -146,7 +149,7 @@ def get_config():
     extradbs = safe_envget('RECOLL_EXTRADBS')
     extraconfdirs = safe_envget('RECOLL_EXTRACONFDIRS')
     if extradbs:
-        config['extradbs'] = shlex.split(extradbs)
+        config['extradbs']=[s.encode(g_fscharset) for s in shlex.split(extradbs)]
     else:
         config['extradbs'] = None
     config['dirs'] = dict.fromkeys([os.path.expanduser(d) for d in
