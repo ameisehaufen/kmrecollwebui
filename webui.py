@@ -222,7 +222,7 @@ def get_query():
         'highlight': int(select([bottle.request.query.highlight, 1], [None, ''])),
         'snippets': int(select([bottle.request.query.snippets, 1], [None, ''])),
     }
-    msg("query['query'] : %s" % query['query'])
+    #msg("query['query'] : %s" % query['query'])
     return query
 #}}}
 #{{{ query_to_recoll_string
@@ -253,7 +253,7 @@ def recoll_initsearch(q):
                 confdirs.append(conf)
         if len(confdirs) == 0:
             # should not happen, using non-existing q['dir']?
-            abort(400, 'no matching database for topdir ' + q['dir'])
+            bottle.abort(400, 'no matching database for topdir ' + q['dir'])
         elif len(confdirs) == 1:
             # only one config (most common situation)
             confdir = confdirs[0]
