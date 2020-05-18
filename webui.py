@@ -112,6 +112,13 @@ def get_topdirs(confdir):
     rclconf = rclconfig.RclConfig(confdir)
     return rclconf.getConfParam('topdirs')
 
+# Environment fetch for the cases where we don't care if unset or null
+def safe_envget(varnm):
+    try:
+        return os.environ[varnm]
+    except Exception as ex:
+        return None
+
 # get database directory from recoll.conf, defaults to
 # confdir/xapiandb
 def get_dbdir(confdir):
@@ -132,18 +139,19 @@ def get_dbdir(confdir):
 #{{{ get_config
 def get_config():
     config = {}
-    envdir = bottle.request.environ.get('RECOLL_CONFDIR')
+    envdir = safe_envget('RECOLL_CONFDIR')
     # get useful things from recoll.conf
     rclconf = rclconfig.RclConfig(envdir)
     config['confdir'] = rclconf.getConfDir()
-    extradbs = bottle.request.environ.get('RECOLL_EXTRADBS')
-    extraconfdirs = os.environ['RECOLL_EXTRACONFDIRS']
+    extradbs = safe_envget('RECOLL_EXTRADBS')
+    extraconfdirs = safe_envget('RECOLL_EXTRACONFDIRS')
     if extradbs:
         config['extradbs'] = shlex.split(extradbs)
     else:
         config['extradbs'] = None
     config['dirs'] = dict.fromkeys([os.path.expanduser(d) for d in
-                      shlex.split(rclconf.getConfParam('topdirs'))], config['confdir'])
+                      shlex.split(rclconf.getConfParam('topdirs'))],
+                                   config['confdir'])
     # add topdirs from extra config dirs
     if extraconfdirs:
         config['extraconfdirs'] = shlex.split(extraconfdirs)
@@ -157,7 +165,8 @@ def get_config():
     for k, v in DEFAULTS.items():
         value = select([bottle.request.get_cookie(k), v])
         config[k] = type(v)(value)
-    # Fix csvfields: get rid of invalid ones to avoid needing tests in the dump function
+    # Fix csvfields: get rid of invalid ones to avoid needing tests in
+    # the dump function
     cf = config['csvfields'].split()
     ncf = [f for f in cf if f in FIELDS]
     config['csvfields'] = ' '.join(ncf)
@@ -166,7 +175,8 @@ def get_config():
     config['mounts'] = {}
     for d in config['dirs']:
         name = 'mount_%s' % urlquote(d,'')
-        config['mounts'][d] = select([bottle.request.get_cookie(name), 'file://%s' % d], [None, ''])
+        config['mounts'][d] = select([bottle.request.get_cookie(name),
+                                      'file://%s' % d], [None, ''])
 
     # Parameters set by the admin in the recoll configuration
     # file. These override anything else, so read them last
@@ -486,4 +496,3 @@ def main():
     return {'url': url}
 #}}}
 # vim: fdm=marker:tw=80:ts=4:sw=4:sts=4:et
-
