@@ -252,18 +252,19 @@ def recoll_initsearch(q):
     else:
         confdirs = []
         for d,conf in config['dirs'].items():
-            if os.path.commonprefix([os.path.basename(d),q['dir']]) == q['dir']:
+            tdbasename = os.path.basename(d)
+            if os.path.commonprefix([tdbasename, q['dir']]) == tdbasename:
                 confdirs.append(conf)
         if len(confdirs) == 0:
             # should not happen, using non-existing q['dir']?
-            bottle.abort(400, 'no matching database for topdir ' + q['dir'])
+            bottle.abort(400, 'no matching database for search directory ' + q['dir'])
         elif len(confdirs) == 1:
             # only one config (most common situation)
             confdir = confdirs[0]
         else:
             # more than one config with matching topdir, use 'm all
             confdir = confdirs[0]
-            dbs.extend(map(get_dbdir,confdirs[1:]))
+            dbs.extend(map(get_dbdir, confdirs[1:]))
 
     if config['extradbs']:
         dbs.extend(config['extradbs'])
