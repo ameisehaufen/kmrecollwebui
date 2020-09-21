@@ -10,6 +10,8 @@ import csv
 import io
 import string
 import shlex
+from urllib.parse import urlencode, quote as urlquote
+from recoll import recoll, rclextract, rclconfig
 
 def msg(s):
     print("%s" % s, file=sys.stderr)
@@ -21,19 +23,6 @@ except ImportError:
     import json
     msg("ujson module not found, using (slower) built-in json module instead")
 
-py3k = sys.version_info >= (3, 0, 0)
-if py3k:
-    from urllib.parse import urlencode, quote as urlquote
-else: # 2.x
-    from urllib import urlencode, quote as urlquote
-
-import urllib
-# import recoll and rclextract
-from recoll import recoll,rclextract
-try:
-    from recoll import rclconfig
-except:
-    import rclconfig
 
 g_fscharset=sys.getfilesystemencoding()
 
@@ -122,22 +111,21 @@ def safe_envget(varnm):
     except Exception as ex:
         return None
 
-# get database directory from recoll.conf, defaults to
-# confdir/xapiandb
+# get database directory from recoll.conf, defaults to confdir/xapiandb. Note
+# that this is available as getDbDir() in newer rclconfig versions
 def get_dbdir(confdir):
+    confdir = os.path.expanduser(confdir)
     rclconf = rclconfig.RclConfig(confdir)
     dbdir = rclconf.getConfParam('dbdir')
-    cachedir = rclconf.getConfParam('cachedir')
-    basename = 'xapiandb'
-    dirname = confdir
-    if cachedir:
-        dirname = cachedir
-    if dbdir:
-        basename = dbdir
-        if os.path.isabs(dbdir):
-            dirname = ''
+    if not dbdir:
+        dbdir = 'xapiandb'
+    if not os.path.isabs(dbdir):
+        cachedir = rclconf.getConfParam('cachedir')
+        if not cachedir:
+            cachedir = confdir
+        dbdir = os.path.join(cachedir, dbdir)
     # recoll API expects bytes, not strings
-    return os.path.normpath(os.path.join(dirname, basename)).encode(g_fscharset)
+    return os.path.normpath(dbdir).encode(g_fscharset)
 #}}}
 #{{{ get_config
 def get_config():
@@ -146,23 +134,20 @@ def get_config():
     # get useful things from recoll.conf
     rclconf = rclconfig.RclConfig(envdir)
     config['confdir'] = rclconf.getConfDir()
-    extradbs = safe_envget('RECOLL_EXTRADBS')
-    extraconfdirs = safe_envget('RECOLL_EXTRACONFDIRS')
-    if extradbs:
-        config['extradbs']=[s.encode(g_fscharset) for s in shlex.split(extradbs)]
-    else:
-        config['extradbs'] = None
     config['dirs'] = dict.fromkeys([os.path.expanduser(d) for d in
                       shlex.split(rclconf.getConfParam('topdirs'))],
                                    config['confdir'])
     # add topdirs from extra config dirs
+    extraconfdirs = safe_envget('RECOLL_EXTRACONFDIRS')
     if extraconfdirs:
         config['extraconfdirs'] = shlex.split(extraconfdirs)
         for e in config['extraconfdirs']:
             config['dirs'].update(dict.fromkeys([os.path.expanduser(d) for d in
                 shlex.split(get_topdirs(e))],e))
+        config['extradbs'] = list(map(get_dbdir, config['extraconfdirs']))
     else:
         config['extraconfdirs'] = None
+        config['extradbs'] = None
     config['stemlang'] = rclconf.getConfParam('indexstemminglanguages')
     # get config from cookies or defaults
     for k, v in DEFAULTS.items():
@@ -433,17 +418,16 @@ def get_json():
     query = get_query()
     qs = query_to_recoll_string(query)
     bottle.response.headers['Content-Type'] = 'application/json'
-    bottle.response.headers['Content-Disposition'] = 'attachment; filename=recoll-%s.json' % normalise_filename(qs)
+    bottle.response.headers['Content-Disposition'] = \
+      'attachment; filename=recoll-%s.json' % normalise_filename(qs)
     res, nres, timer = recoll_search(query)
-
-    if py3k:
-        ures = []
-        for d in res:
-            ud={}
-            for f,v in d.items():
-                ud[f] = v
-            ures.append(ud)
-        res = ures
+    ures = []
+    for d in res:
+        ud={}
+        for f,v in d.items():
+            ud[f] = v
+        ures.append(ud)
+    res = ures
     return json.dumps({ 'query': query, 'results': res })
 #}}}
 #{{{ csv
@@ -455,12 +439,10 @@ def get_csv():
     query['snippets'] = 0
     qs = query_to_recoll_string(query)
     bottle.response.headers['Content-Type'] = 'text/csv'
-    bottle.response.headers['Content-Disposition'] = 'attachment; filename=recoll-%s.csv' % normalise_filename(qs)
+    bottle.response.headers['Content-Disposition'] = \
+      'attachment; filename=recoll-%s.csv' % normalise_filename(qs)
     res, nres, timer = recoll_search(query)
-    if py3k:
-        si = io.StringIO()
-    else:
-        si = io.BytesIO()
+    si = io.StringIO()
     cw = csv.writer(si)
     fields = config['csvfields'].split()
     cw.writerow(fields)
