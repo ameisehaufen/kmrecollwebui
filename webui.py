@@ -265,7 +265,8 @@ def recoll_initsearch(q):
     try:
         qs = query_to_recoll_string(q)
         query.execute(qs, config['stem'], config['stemlang'])
-    except:
+    except Exception as ex:
+        msg("Query execute failed: %s" % ex)
         pass
     return query
 #}}}
