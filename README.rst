@@ -19,7 +19,8 @@ Requirements
 
 All you need to use the WebUI is:
 
-* Python 3
+* Python 3. On Windows you currently need Python 3.7 because this is what
+  the module is built with.
 * The Python waitress package. You can remove this dependance and run with
   the internal bottle server by editing webui-standalone.py
 * Recoll 1.20+
