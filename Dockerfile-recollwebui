@@ -1,0 +1,49 @@
+FROM bitnami/minideb:buster
+MAINTAINER kolohals
+LABEL description="recollsearch"
+
+ARG UNAME=recolluser
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g $GID -o $UNAME
+RUN useradd -m -u $UID -g $GID -o -s /bin/bash $UNAME
+RUN install_packages software-properties-common apt-transport-https ca-certificates gnupg && \
+	mkdir /data && \
+    mkdir /conf && \
+    mkdir /kmrecollwebui && \
+    apt-get update && \
+    apt-get install -y \
+    recoll \
+    python3-recoll \
+    python3 \
+    wv \
+    poppler-utils \
+    xsltproc \
+    unrtf \
+    unzip \
+    libimage-exiftool-perl \
+    antiword \
+    aspell-pt-br \
+    aspell-en \
+    aspell-es \
+    python-chm \
+    python-libxml2 \
+    python-libxslt1 \
+    python-mutagen  && \
+    rm -rf kmrecollwebui/.git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* 
+RUN install_packages python3-pip catdvi python3-setuptools python2 python-recoll && \
+    pip3 install wheel && \
+    pip3 install waitress && \
+    pip3 install future
+RUN export LC_ALL=$(locale -a | grep UTF-8)
+
+COPY kmrecollwebui /kmrecollwebui
+
+VOLUME /data
+VOLUME /home/recolluser/.recoll
+
+EXPOSE 8080
+
+CMD ["/usr/bin/python3", "/kmrecollwebui/webui-standalone.py", "-a", "0.0.0.0"]
