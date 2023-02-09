@@ -1,10 +1,7 @@
-============
-Recoll WebUI
-============
+# Recoll WebUI
 
-This is an update of (https://framagit.org/medoc92/recollwebui) that is an updated clone of
-Koniu's original version on GitHub (https://github.com/koniu/recoll-webui),
-which has not been updated lately, and is now slightly obsolete.
+
+This is an Dockerfile for recoll + an update of (https://framagit.org/medoc92/recollwebui) that is an updated clone of Koniu's original version on GitHub (https://github.com/koniu/recoll-webui), which has not been updated lately, and is now slightly obsolete.
 
 **Recoll WebUI** is a Python-based web interface for **Recoll** text search
 tool for Unix/Linux.
@@ -14,124 +11,40 @@ tool for Unix/Linux.
 * WebUI homepage: https://github.com/koniu/recoll-webui
 * Recoll homepage: http://www.lesbonscomptes.com/recoll
 
-Requirements
-============
 
-All you need to use the WebUI is:
+## To build first
 
-* Python 3. On Windows you currently need Python 3.7 because this is what
-  the module is built with.
-* The Python waitress package. You can remove this dependance and run with
-  the internal bottle server by editing webui-standalone.py
-* Recoll 1.20+
-* web browser
+```sh
+mkdir somefolder
+cd somefolder
+git clone https://github.com/ameisehaufen/kmrecollwebui.git
+cp kmrecollwebui/Dockerfile-recollwebui .
 
+docker build -t kolohals/recollweb:latest --build-arg TIMEZONE=America/Sao_Paulo -f Dockerfile-recollwebui .
+```
 
-Usage
-=====
+## Create Container
 
-**Recoll WebUI** can be used as a standalone application or through a web
-server via WSGI/CGI. Regardless of the mode of operation you need Recoll
-to be configured on your system as the WebUI only provides a front-end for
-searching and does not handle index configuration etc.
-
-Run standalone
---------------
-Run ``webui-standalone.py`` and connect to ``http://localhost:8080``.
-
-There's some optional command-line arguments available::
-
-    -h, --help            show this help message and exit
-    -a ADDR, --addr ADDR  address to bind to [127.0.0.1]
-    -p PORT, --port PORT  port to listen on [8080]
-
-The standalone application can be configured to run automatically using
-systemd. See the file README.systemd.
-
-Run as WSGI/CGI
----------------
-
-See the following link for a complete run-through:
-
-https://www.lesbonscomptes.com/recoll/pages/recoll-webui-install-wsgi.html
-
-Example WSGI/Apache2 config::
-
-        WSGIDaemonProcess recoll user=recoll group=recoll threads=5 display-name=%{GROUP} python-path=/var/recoll-webui-master
-        WSGIScriptAlias /recoll /var/recoll-webui-master/webui-wsgi.py
-        <Directory /var/recoll-webui-master>
-                WSGIProcessGroup recoll
-                Order allow,deny
-                allow from all
-        </Directory>
-
-Remarks:
-* Without "python-path=" you might see errors that it can't import webui 
-* Run the WSGIDeamonProcess run under the username (user=xyz) of the user that you want to have exposed via web
-
-
-Example Upstart-Script for Ubuntu to run the indexer as daemon::
-
-
-        description "recoll indexer"
-
-        start on runlevel [2345]
-        stop on runlevel [!2345]
-        
-        respawn
-        
-        pre-start script
-                exec sudo -u recoll sh -c "/usr/local/share/recoll/examples/rclmon.sh start"
-        end script
-        
-        pre-stop script
-                exec sudo -u recoll sh -c "/usr/local/share/recoll/examples/rclmon.sh stop"
-        end script
-
-Remarks:
-* You need to configure the user for which the indexer should run ("sudo -u [myuser])
-
-
-Example Crontab entry to have the indexer at least once a day::
-
-        22 5    * * *   recoll  recollindex
-
-
-
-Issues
-======
-
-Can't open files when Recoll WebUI is running on a server
----------------------------------------------------------
-By default links to files in the result list correspond to the file's
-physical location on the server. If you have access to the file tree
-via a local mountpoint or eg. ftp/http you can provide replacement
-URLs in the WebUI settings. If in doubt, ask your network administrator.
-
-Opening files via local links
------------------------------
-For security reasons modern browsers prevent linking to local content from
-'remote' pages. As a result URLs starting with file:// will not, by default,
-be opened when linked from anything else than pages in file:// or when
-accessed directly from the address bar. Here's ways of working around it:
-
-Firefox
-~~~~~~~
-1. Insert contents of ``examples/firefox-user.js`` into
-   ``~/.mozilla/firefox/<profile>/user.js``
-2. Restart Firefox
-
-Chrom{e,ium}
-~~~~~~~~~~~~
-Install *LocalLinks* extension:
-
-* http://code.google.com/p/locallinks/
-* https://chrome.google.com/webstore/detail/locallinks/jllpkdkcdjndhggodimiphkghogcpida
-
-Opera
-~~~~~
-1. Copy ``examples/opera-open.sh`` into your PATH (eg. ``/usr/local/bin``)
-2. Go to ``Tools > Preferences > Advanced > Programs > Add``
-3. In ``Protocol`` field enter ``local-file``
-4. Select ``Open with other application`` and enter ``opera-open.sh``
-5. In WebUI settings replace all ``file://`` with ``local-file://``
+```sh
+app="recollwebui" && \
+appDir=/AppFolder/"${app}" && \
+dataDir=/dataFolder && \
+mkdir -p "${appDir}"
+touch "${appDir}"/"${app}".conf
+docker stop "${app}"; docker rm "${app}"
+[ -d "${appDir}" ] && \
+docker run -d \
+  --name=${app} \
+  -p 58131:8080 \
+  -e USER_UID=1000 \
+  -e USER_GID=1000 \
+  -e TZ=America/Sao_Paulo \
+  -e RECOLL_INDEX_DIR="$dataDir" \
+  --restart=unless-stopped \
+  -e DISPLAY=${DISPLAY} -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+  --log-driver json-file \
+  --log-opt max-size=50m \
+  -v "$dataDir":/data \
+  -v "${appDir}"/"${app}".conf:/home/recolluser/.recoll \
+kolohals/${app}:latest
+```
