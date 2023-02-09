@@ -1,5 +1,4 @@
-# Recoll WebUI
-
+# Recoll WebUI (with errors)
 
 This is an Dockerfile for recoll + an update of (https://framagit.org/medoc92/recollwebui) that is an updated clone of Koniu's original version on GitHub (https://github.com/koniu/recoll-webui), which has not been updated lately, and is now slightly obsolete.
 
@@ -51,8 +50,11 @@ kolohals/${app}:latest
 
 ## Open in X desktop
 
+Not working due to index config problems...
 
 ```bash
+xhost +local:docker
+
 docker run --rm -ti \
 -e DISPLAY=$DISPLAY \
 -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
@@ -62,6 +64,7 @@ kolohals/recollwebui recoll
 
 ## To index
 
+Something in this section are going wrong...
 You should run it first, than you can put it in cron.
 
 ```sh
