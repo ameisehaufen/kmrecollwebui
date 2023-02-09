@@ -48,3 +48,23 @@ docker run -d \
   -v "${appDir}"/"${app}".conf:/home/recolluser/.recoll \
 kolohals/${app}:latest
 ```
+
+## Open in X desktop
+
+
+```bash
+docker run --rm -ti \
+-e DISPLAY=$DISPLAY \
+-v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+--user=$(id -u):$(id -g) \
+kolohals/recollwebui recoll
+```
+
+## To index
+
+You should run it first, than you can put it in cron.
+
+```sh
+#!/bin/sh
+docker exec recollwebui recollindex > /var/log/recollindex.log 2>&
+```
