@@ -1,0 +1,14 @@
+[Unit]
+Description=Full text search for personal files
+After=network.target
+Type=simple
+
+[Service]
+User=camargo
+Group=camargo
+ExecStart=/usr/bin/env python3 /data/AppSys/recollwebui/kmrecollwebui/webui-standalone.py -a %H -p 58143
+Restart=on-failure
+ExecStop=/bin/kill -SIGINT $MAINPID
+
+[Install]
+WantedBy=default.target
