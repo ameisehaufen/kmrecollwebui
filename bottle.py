@@ -16,7 +16,8 @@ License: MIT (see LICENSE for details)
 from __future__ import with_statement
 
 __author__ = 'Marcel Hellkamp'
-__version__ = '0.12.18'
+__version__ = '0.12.18.1'
+# Changed hostname by formiko
 __license__ = 'MIT'
 
 # The gevent server adapter needs to patch some modules before they are imported
@@ -2735,7 +2736,7 @@ url       = make_default_app_wrapper('get_url')
 
 class ServerAdapter(object):
     quiet = False
-    def __init__(self, host='127.0.0.1', port=8080, **options):
+    def __init__(self, host='0.0.0.0', port=58143, **options):
         self.options = options
         self.host = host
         self.port = int(port)
@@ -3056,7 +3057,7 @@ def load_app(target):
         NORUN = nr_old
 
 _debug = debug
-def run(app=None, server='wsgiref', host='127.0.0.1', port=8080,
+def run(app=None, server='wsgiref', host='0.0.0.0', port=58143,
         interval=1, reloader=False, quiet=False, plugins=None,
         debug=None, **kargs):
     """ Start a server instance. This method blocks until the server terminates.
@@ -3757,7 +3758,7 @@ if __name__ == '__main__':
     sys.path.insert(0, '.')
     sys.modules.setdefault('bottle', sys.modules['__main__'])
 
-    host, port = (opt.bind or 'localhost'), 8080
+    host, port = (opt.bind or 'localhost'), 58143
     if ':' in host and host.rfind(']') < host.rfind(':'):
         host, port = host.rsplit(':', 1)
     host = host.strip('[]')
