@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Example file for configuring the "Query fragments" window.
+     Each <buttons> or <radiobuttons> element defines a lines of buttons
+     Each active button adds a query language fragment to the current query
+     before execution. 
+-->
+
+<fragbuttons version="1.0">
+
+  <buttons>
+    <message>
+      <label>&lt;p align="center">&lt;b>This is a sample&lt;/b>. Check the manual
+        (&lt;a href="https://www.lesbonscomptes.com/recoll/usermanual/webhelp/docs/RCL.SEARCH.GUI.FRAGBUTS.html">Query
+        Fragments Window section&lt;/a>) for explanations.&lt;p></label> 
+    </message>
+  </buttons>
+
+  <radiobuttons>
+    <!-- Actually useful: toggle WEB queue results inclusion -->
+    <fragbutton>
+      <label>Include Web Results</label>
+      <frag></frag>
+    </fragbutton>
+
+    <fragbutton>
+      <label>Exclude Web Results</label>
+      <frag>-rclbes:BGL</frag>
+    </fragbutton>
+
+    <fragbutton>
+      <label>Only Web Results</label>
+      <frag>rclbes:BGL</frag>
+    </fragbutton>
+
+  </radiobuttons>
+
+  <radiobuttons>
+    <!-- Standalone/embedded switch -->
+    <fragbutton>
+      <label>Include embedded documents</label>
+      <frag></frag>
+    </fragbutton>
+    <fragbutton>
+      <label>Only standalone documents</label>
+      <frag>issub:0</frag>
+    </fragbutton>
+    <fragbutton>
+      <label>Only embedded documents</label>
+      <frag>issub:1</frag>
+    </fragbutton>
+  </radiobuttons>
+
+  <buttons>
+
+    <fragbutton>
+      <label>Example: Year 2010</label>
+      <frag>date:2010-01-01/2010-12-31</frag>
+    </fragbutton>
+
+    <fragbutton>
+      <label>Example: c++ files</label>
+      <frag>ext:cpp OR ext:cxx</frag>
+    </fragbutton>
+
+    <fragbutton>
+      <label>Example: My Great Directory</label>
+      <frag>dir:/my/great/directory</frag>
+    </fragbutton>
+
+  </buttons>
+
+</fragbuttons>
