@@ -3,9 +3,8 @@ Description=Full text search for personal files
 After=network.target
 Type=simple
 
-# Teste antes da linha feito em origin
 # Comentario
-# Teste depois de comentario feito em local
+# Teste depois de comentario feito em local editado
 [Service]
 ExecStart=/usr/bin/env python3 /data/AppSys/recollwebui/kmrecollwebui/webui-standalone.py -a %H -p 58143
 Restart=on-failure
