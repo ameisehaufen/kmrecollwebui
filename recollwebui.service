@@ -3,6 +3,9 @@ Description=Full text search for personal files
 After=network.target
 Type=simple
 
+<<<<<<< HEAD
+=======
+>>>>>>> 5c20953d0b6420b4668adf689b0c30740b9efbb9
 # Comentario
 # Teste depois de comentario feito em local editado
 [Service]
