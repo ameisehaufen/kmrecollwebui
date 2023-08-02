@@ -1,35 +1,34 @@
-# Recoll WebUI (with errors)
+# Recollcmd + WebUI + Docker
 
-This is an Dockerfile for recoll + an update of (https://framagit.org/medoc92/recollwebui) that is an updated clone of Koniu's original version on GitHub (https://github.com/koniu/recoll-webui), which has not been updated lately, and is now slightly obsolete.
+This is an Dockerfile for recoll + an update of (<https://framagit.org/medoc92/recollwebui>) that is also an updated clone of Koniu's original version on GitHub (<https://github.com/koniu/recoll-webui>), which has not been updated lately, and is now slightly obsolete.
 
-**Recoll WebUI** is a Python-based web interface for **Recoll** text search
-tool for Unix/Linux.
+**Recoll WebUI** is a Python-based web interface for **Recoll** text search tool for Unix/Linux.
 
-.. image:: http://i.imgur.com/n8qTnBg.png
+![RecollImg](http://i.imgur.com/n8qTnBg.png)
 
-* WebUI homepage: https://github.com/koniu/recoll-webui
-* Recoll homepage: http://www.lesbonscomptes.com/recoll
+* WebUI homepage: <https://github.com/koniu/recoll-webui>
+* Recoll homepage: <http://www.lesbonscomptes.com/recoll>
 
+## Build docker image
 
-## To build first
+Only if you do not want to user the dockerhub image
 
 ```sh
-mkdir somefolder
-cd somefolder
 git clone https://github.com/ameisehaufen/kmrecollwebui.git
-cp kmrecollwebui/Dockerfile-recollwebui .
-
-docker build -t kolohals/recollweb:latest --build-arg TIMEZONE=America/Sao_Paulo -f Dockerfile-recollwebui .
+docker build -t kolohals/recollweb:latest  --build-arg TIMEZONE=America/Sao_Paulo -f Dockerfile-recollwebui .
 ```
 
 ## Create Container
 
+kolohals/recollweb:latest
+
 ```sh
-app="recollwebui" && \
-appDir=/AppFolder/"${app}" && \
-dataDir=/dataFolder && \
-mkdir -p "${appDir}"
-touch "${appDir}"/"${app}".conf
+app="recoll"
+appDir=$HOME/DockerPersistentFiles/"${app}"
+mkdir -p "${appDir}"/config
+dataDirHost="/data/Documents"
+confDir=/home/recolluser/.recoll
+dataDirContainer=/data
 docker stop "${app}"; docker rm "${app}"
 [ -d "${appDir}" ] && \
 docker run -d \
@@ -38,36 +37,32 @@ docker run -d \
   -e USER_UID=1000 \
   -e USER_GID=1000 \
   -e TZ=America/Sao_Paulo \
-  -e RECOLL_INDEX_DIR="$dataDir" \
   --restart=unless-stopped \
-  -e DISPLAY=${DISPLAY} -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+  -e RECOLL_INDEX_DIR=$dataDirContainer \
+  -e RECOLL_CONFDIR=$confDir \
   --log-driver json-file \
   --log-opt max-size=50m \
-  -v "$dataDir":/data \
-  -v "${appDir}"/"${app}".conf:/home/recolluser/.recoll \
-kolohals/${app}:latest
+  -v "$dataDirHost":"$dataDirContainer" \
+  -v "${appDir}"/config:"$confDir" \
+kolohals/recollweb:latest && \
+sleep 3 && \
+docker exec "$app" runuser -l recolluser -c 'recollindex -c /home/recolluser/.recoll/'
 ```
 
-## Open in X desktop
+## Add firefox extended support
 
-Not working due to index config problems...
-
-```bash
-xhost +local:docker
-
-docker run --rm -ti \
--e DISPLAY=$DISPLAY \
--v /tmp/.X11-unix:/tmp/.X11-unix:rw \
---user=$(id -u):$(id -g) \
-kolohals/recollwebui recoll
+```sh
+firefox_profile="$(cat ~/.mozilla/firefox/profiles.ini | grep Path | cut -d '=' -f2 | grep default | head -n 1)"
+cat >> ~/.mozilla/firefox/"$firefox_profile"/user.js << EOL
+user_pref("capability.policy.policynames", "localfilelinks");
+user_pref("capability.policy.localfilelinks.sites", "http://localhost:58131");
+user_pref("capability.policy.localfilelinks.checkloaduri.enabled", "allAccess");
+EOL
 ```
 
-## To index
-
-Something in this section are going wrong...
-You should run it first, than you can put it in cron.
+## To index files
 
 ```sh
 #!/bin/sh
-docker exec recollwebui recollindex > /var/log/recollindex.log 2>&
+docker exec "$app" runuser -l recolluser -c 'recollindex -c /home/recolluser/.recoll/'
 ```

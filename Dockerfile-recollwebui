@@ -1,49 +1,57 @@
-FROM bitnami/minideb:buster
+FROM  debian:buster-slim
 MAINTAINER kolohals
 LABEL description="recollsearch"
 
+ARG DATADIR=/data
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LC_ALL="C.UTF-8"
 ARG UNAME=recolluser
 ARG UID=1000
 ARG GID=1000
-RUN groupadd -g $GID -o $UNAME
-RUN useradd -m -u $UID -g $GID -o -s /bin/bash $UNAME
-RUN install_packages software-properties-common apt-transport-https ca-certificates gnupg && \
-	mkdir /data && \
-    mkdir /conf && \
-    mkdir /kmrecollwebui && \
+RUN groupadd -g $GID -o $UNAME && \
+    useradd -m -u $UID -g $GID -o -s /bin/bash $UNAME
+
+# install important dependencies
+COPY recoll.gpg  /home/$UNAME/.recoll/recoll.gpg
+COPY recoll.conf /home/$UNAME/.recoll/recoll.conf
+RUN apt-get update -yq &&  \
+    apt-get install -yq --no-install-recommends python3 python3-pip python3-setuptools git gnupg && \
+    pip3 install waitress
+RUN gpg --import  /home/$UNAME/.recoll/recoll.gpg && gpg --export '7808CE96D38B9201' | apt-key add - && \
+    apt-get install --reinstall -yq ca-certificates && \
     apt-get update && \
-    apt-get install -y \
-    recoll \
-    python3-recoll \
-    python3 \
-    wv \
-    poppler-utils \
-    xsltproc \
-    unrtf \
-    unzip \
+    echo deb http://www.lesbonscomptes.com/recoll/debian/ buster main > \
+        /etc/apt/sources.list.d/recoll.list && \
+    echo deb-src http://www.lesbonscomptes.com/recoll/debian/ buster main >> \
+        /etc/apt/sources.list.d/recoll.list
+RUN apt-get install -yq recollcmd python3-recoll
+# Indexador de PDFS
+RUN apt-get install -yq --no-install-recommends poppler-utils
+# indexador de rtf e word
+RUN apt-get install -yq --no-install-recommends unrtf antiword wv
+RUN apt-get install -yq --no-install-recommends unzip \
     libimage-exiftool-perl \
-    antiword \
     aspell-pt-br \
     aspell-en \
-    aspell-es \
-    python-chm \
-    python-libxml2 \
     python-libxslt1 \
-    python-mutagen  && \
-    rm -rf kmrecollwebui/.git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* 
-RUN install_packages python3-pip catdvi python3-setuptools python2 python-recoll && \
-    pip3 install wheel && \
-    pip3 install waitress && \
-    pip3 install future
-RUN export LC_ALL=$(locale -a | grep UTF-8)
+    python-mutagen 
+RUN mkdir $DATADIR && \
+    [ ! -d /home/$UNAME/.recoll ] && mkdir /home/$UNAME/.recoll || \
+    cd / && \
+    git clone https://github.com/ameisehaufen/kmrecollwebui.git && \
+    mv kmrecollwebui recollwebui
+    #git clone https://framagit.org/medoc92/recollwebui.git
 
-COPY kmrecollwebui /kmrecollwebui
+#COPY *.py /recollwebui/
 
-VOLUME /data
-VOLUME /home/recolluser/.recoll
+RUN apt-get remove -yq git && \
+apt autoremove -yq && apt-get clean && rm -rf /var/lib/apt/lists/* && \
+rm -rf recollwebui/.git
 
+ENV RECOLL_CONFDIR=/home/$UNAME/.recoll
+ENV RECOLL_INDEX_DIR=$DATADIR
+VOLUME $DATADIR
+VOLUME /home/$UNAME/.recoll
 EXPOSE 8080
 
-CMD ["/usr/bin/python3", "/kmrecollwebui/webui-standalone.py", "-a", "0.0.0.0"]
+CMD ["/usr/bin/python3", "/recollwebui/webui-standalone.py", "-a", "0.0.0.0"]
