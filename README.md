@@ -26,7 +26,7 @@ kolohals/recollweb:latest
 app="recoll"
 appDir=$HOME/DockerPersistentFiles/"${app}"
 mkdir -p "${appDir}"/config
-dataDirHost="/data/Documents"
+dataDirHost="/data"
 confDir=/home/recolluser/.recoll
 dataDirContainer=/data
 docker stop "${app}"; docker rm "${app}"
@@ -52,10 +52,11 @@ docker exec "$app" runuser -l recolluser -c 'recollindex -c /home/recolluser/.re
 ## Add firefox extended support
 
 ```sh
-firefox_profile="$(cat ~/.mozilla/firefox/profiles.ini | grep Path | cut -d '=' -f2 | grep default | head -n 1)"
-cat >> ~/.mozilla/firefox/"$firefox_profile"/user.js << EOL
+firefox_profile="$(cat ~/.mozilla/firefox/profiles.ini | grep Path | cut -d '=' -f2 | grep default | tail -n 1)"
+echo $firefox_profile
+cat >> ~/.mozilla/firefox/"$firefox_profile"/prefs.js << EOL
 user_pref("capability.policy.policynames", "localfilelinks");
-user_pref("capability.policy.localfilelinks.sites", "http://localhost:58131");
+user_pref("capability.policy.localfilelinks.sites", "http://razorcrest:58131 http://razorcrest");
 user_pref("capability.policy.localfilelinks.checkloaduri.enabled", "allAccess");
 EOL
 ```
