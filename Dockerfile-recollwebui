@@ -1,52 +1,41 @@
 FROM debian:bookworm-slim
-MAINTAINER kolohals
+LABEL maintainer="kolohals"
 LABEL description="recollsearch"
-
 ARG DATADIR=/data
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LC_ALL="C.UTF-8"
 ARG UNAME=recolluser
 ARG UID=1000
 ARG GID=1000
+
 RUN groupadd -g $GID -o $UNAME && \
     useradd -m -u $UID -g $GID -o -s /bin/bash $UNAME
 
-# install important dependencies
-COPY recoll.gpg  /home/$UNAME/.recoll/recoll.gpg
 COPY recoll.conf /home/$UNAME/.recoll/recoll.conf
-RUN apt-get update -yq &&  \
-    apt-get install -yq --no-install-recommends python3 python3-pip python3-setuptools git gnupg && \
-    pip3 install waitress
-RUN gpg --import  /home/$UNAME/.recoll/recoll.gpg && gpg --export '7808CE96D38B9201' | apt-key add - && \
-    apt-get install --reinstall -yq ca-certificates && \
-    apt-get update && \
-    echo deb http://www.lesbonscomptes.com/recoll/debian/ buster main > \
-        /etc/apt/sources.list.d/recoll.list && \
-    echo deb-src http://www.lesbonscomptes.com/recoll/debian/ buster main >> \
-        /etc/apt/sources.list.d/recoll.list
-RUN apt-get install -yq recollcmd python3-recoll
-# Indexador de PDFS
-RUN apt-get install -yq --no-install-recommends poppler-utils
-# indexador de rtf e word
-RUN apt-get install -yq --no-install-recommends unrtf antiword wv
-RUN apt-get install -yq --no-install-recommends unzip \
-    libimage-exiftool-perl \
-    aspell-pt-br \
-    aspell-en \
-    python-libxslt1 \
-    python-mutagen 
-RUN mkdir $DATADIR && \
-    [ ! -d /home/$UNAME/.recoll ] && mkdir /home/$UNAME/.recoll || \
+
+# Recoll do próprio Debian bookworm + dependências
+RUN apt-get update -yq && \
+    apt-get install -yq --no-install-recommends \
+        python3 python3-setuptools python3-waitress \
+        recollcmd python3-recoll \
+        git ca-certificates \
+        poppler-utils \
+        unrtf antiword wv \
+        unzip libimage-exiftool-perl \
+        aspell-pt-br aspell-en \
+        python3-mutagen python3-lxml
+
+# WebUI
+RUN mkdir -p $DATADIR && \
     cd / && \
-    git clone https://github.com/ameisehaufen/kmrecollwebui.git && \
-    mv kmrecollwebui recollwebui
-    #git clone https://framagit.org/medoc92/recollwebui.git
+    git clone https://github.com/ameisehaufen/kmrecollwebui.git recollwebui && \
+    rm -rf /recollwebui/.git
 
-#COPY *.py /recollwebui/
-
+# Limpeza
 RUN apt-get remove -yq git && \
-apt autoremove -yq && apt-get clean && rm -rf /var/lib/apt/lists/* && \
-rm -rf recollwebui/.git
+    apt-get autoremove -yq && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN chown -R $UID:$GID /home/$UNAME/.recoll
 
 ENV RECOLL_CONFDIR=/home/$UNAME/.recoll
 ENV RECOLL_INDEX_DIR=$DATADIR
@@ -54,4 +43,5 @@ VOLUME $DATADIR
 VOLUME /home/$UNAME/.recoll
 EXPOSE 8080
 
+USER $UNAME
 CMD ["/usr/bin/python3", "/recollwebui/webui-standalone.py", "-a", "0.0.0.0"]
